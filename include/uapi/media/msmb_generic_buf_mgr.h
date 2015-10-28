@@ -63,4 +63,3 @@ struct msm_buf_mngr_main_cont_info {
 	struct msm_camera_private_ioctl_arg)
 
 #endif
-

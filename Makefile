@@ -403,6 +403,7 @@ KBUILD_CFLAGS   := -Werror -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-strict-aliasing -fno-common \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
+		   -Wno-array-bounds \
 		   -std=gnu89
 
 KBUILD_AFLAGS_KERNEL :=
@@ -629,6 +630,9 @@ endif
 
 # Needed to unbreak GCC 7.x and above
 KBUILD_CFLAGS   += $(call cc-option,-fno-store-merging,)
+
+# Fuck Prima
+KBUILD_CFLAGS   += $(call cc-disable-warning,misleading-indentation,)
 
 # Kill format truncation warnings
 KBUILD_CFLAGS   += $(call cc-disable-warning,format-truncation,)

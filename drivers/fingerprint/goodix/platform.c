@@ -45,10 +45,11 @@ static int select_pin_ctl(struct gf_dev *gf_dev,
 			rc =
 			pinctrl_select_state(gf_dev->fingerprint_pinctrl,
 				gf_dev->pinctrl_state[i]);
-			if (rc)
+			if (rc){
 				dev_err(dev, "cannot select '%s'\n", name);
-			else
+			}else{
 				dev_err(dev, "Selected '%s'\n", name); goto exit;
+			}
 		}
 	}
 	rc = -EINVAL;

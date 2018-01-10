@@ -31,14 +31,14 @@ echo -e "***********************************************$nocol"
 LC_ALL=C date +%Y-%m-%d
 kernel_dir=$PWD
 build=$kernel_dir/out
-export CROSS_COMPILE="/home/vpsrupansh/ubertc"
+export CROSS_COMPILE="/home/vpsrupansh/aarch64-linux-android-4.9-kernel/bin/aarch64-linux-android-"
 kernel="Chimera"
 version="1.0"
 vendor="xiaomi"
 device="land"
 zip=zip
 date=`date +"%Y%m%d-%H%M"`
-config=mido_defconfig
+config=lineageos_land_defconfig
 kerneltype="Image.gz-dtb"
 jobcount="-j$(grep -c ^processor /proc/cpuinfo)"
 #modules_dir=$kernel_dir/"$zip"/system/lib/modules

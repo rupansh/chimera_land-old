@@ -3,6 +3,7 @@
  *
  *
  * Copyright (c) 2013, Dennis Rassmann <showp1984@gmail.com>
+ * Copyright (c) 2017, Tanish <tanish2k09.dev@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -49,21 +50,22 @@ extern int ltr559_ps_ondemand_state (void);
 #endif
 
 /* Version, author, desc, etc */
-#define DRIVER_AUTHOR "Dennis Rassmann <showp1984@gmail.com>"
+#define DRIVER_AUTHOR "Tanish <tanish2k09.dev@gmail.com>"
 #define DRIVER_DESCRIPTION "Doubletap2wake for almost any device"
-#define DRIVER_VERSION "1.0"
+#define DRIVER_VERSION "2.0"
 #define LOGTAG "[doubletap2wake]: "
 
 MODULE_AUTHOR(DRIVER_AUTHOR);
 MODULE_DESCRIPTION(DRIVER_DESCRIPTION);
 MODULE_VERSION(DRIVER_VERSION);
-MODULE_LICENSE("GPLv2");
+MODULE_LICENSE("GPLv3");
 
 /* Tuneables */
 #define DT2W_DEFAULT		0
 
 #define DT2W_PWRKEY_DUR		60
-#define DT2W_TIME		700
+#define DT2W_TIME		400
+#define DT2W_RADIUS		200
 
 #define DT2W_OFF 0
 #define DT2W_ON 1
@@ -74,14 +76,14 @@ int dt2w_switch = DT2W_DEFAULT;
 bool dt2w_scr_suspended = false;
 bool in_phone_call = false;
 int dt2w_sent_play_pause = 0;
-int dt2w_feather = 200, dt2w_feather_w = 1;
+//int dt2w_feather = 200, dt2w_feather_w = 1;
 #ifdef CONFIG_PSENSOR_ONDEMAND_STATE
 int dtw2_psensor_state = LTR559_ON_DEMAND_RESET;
 #endif
 static cputime64_t tap_time_pre = 0;
-static int touch_x = 0, touch_y = 0, touch_nr = 0, x_pre = 0, y_pre = 0;
+static int touch_x = 0, touch_y = 0, x_pre = 0, y_pre = 0;
 static bool touch_x_called = false, touch_y_called = false, touch_cnt = false;
-static bool exec_count = true;
+static bool /*exec_count = true,*/ touch_nr = 0;
 static struct input_dev * doubletap2wake_pwrdev;
 static DEFINE_MUTEX(pwrkeyworklock);
 static struct workqueue_struct *dt2w_input_wq;
@@ -175,12 +177,11 @@ static void doubletap2wake_pwrtrigger(void) {
 }
 
 /* unsigned */
-static unsigned int calc_feather(int coord, int prev_coord) {
-	int calc_coord = 0;
-	calc_coord = coord-prev_coord;
-	if (calc_coord < 0)
-		calc_coord = calc_coord * (-1);
-	return calc_coord;
+static bool calc_within_range(int x_pre, int y_pre, int x_new, int y_new, int radius_max) {
+	int calc_radius = ((x_new-x_pre)*(x_new-x_pre)) - ((y_new-y_pre)*(y_new-y_pre)) ;
+    if (calc_radius < ((radius_max)*(radius_max)))
+        return true;
+    return false;
 }
 
 /* init a new touch */
@@ -192,47 +193,71 @@ static void new_touch(int x, int y) {
 }
 
 /* Doubletap2wake main function */
-static void detect_doubletap2wake(int x, int y, bool st)
+static void detect_doubletap2wake(int x, int y)
 {
-    bool single_touch = st;
+	// Update half screen value for y-axis. 720p uses 640 and 1080p uses 960 ;)
+	if (dt2w_switch < 2 && y < 640)
+        	return;
 	
-	if (dt2w_switch < 2 && y < 1000)
-        return;
+	/* dt2w_feather removed and DT2W_RADIUS added
 	if (dt2w_feather_w == 2)
 		dt2w_feather = 100;
 	else if (dt2w_feather_w == 3)
 		dt2w_feather = 40;
 	else
 		dt2w_feather = 200;
-	if ((single_touch) && (dt2w_switch > 0) && (exec_count) && (touch_cnt)) {
+	*/
+	if ((dt2w_switch > 0) && (touch_cnt)) 
+	{
 		touch_cnt = false;
-		if (touch_nr == 0) {
+		if (touch_nr == 0) 	//True on first tap
+		{
 			new_touch(x, y);
-		} else if (touch_nr == 1) {
-			if ((calc_feather(x, x_pre) < dt2w_feather) &&
-			    (calc_feather(y, y_pre) < dt2w_feather) &&
-			    ((ktime_to_ms(ktime_get_real())-tap_time_pre) < DT2W_TIME)) {
-				touch_nr++;
-			} else {
+		} 
+		else if (touch_nr == 1) 
+		{
+			//Check for distance and time conditions
+			if ((calc_within_range(x_pre, y_pre,x,y, DT2W_RADIUS) == true) && ((ktime_to_ms(ktime_get())-tap_time_pre) < DT2W_TIME))
+			{
+				//touch_nr++;     
+				/*Here we know that the touch number is going to be 2 and 
+				hence >1 so the if statement down below will turn true
+				so it is better that we don't wait for the control to 
+				go there, and we pwr_on it from here directly*/
+				// exec_count = false
+				/* we removed exec_count because the pwrtrigger call will turn the screen on
+				with appropriate wait (DT2W_PWRTRIGGER value) and detect function is never\
+				called when screen is woken up*/
+				doubletap2wake_pwrtrigger();
+				doubletap2wake_reset();
+			} 
+			else 
+			{
 				doubletap2wake_reset();
 				new_touch(x, y);
 			}
-		} else {
+		}
+		/* This else is useless because touch_nr is only a bool now. 0 and 1 have been handled
+		else 
+		{
 			doubletap2wake_reset();
 			new_touch(x, y);
 		}
+		*/
+		/* We already took care of pwrtrigger in touch_nr = 1 case above.
 		if ((touch_nr > 1)) {
 			pr_info(LOGTAG"ON\n");
 			exec_count = false;
 			doubletap2wake_pwrtrigger();
 			doubletap2wake_reset();
 		}
+		*/
 	}
 }
 
 static void dt2w_input_callback(struct work_struct *unused) {
   
-	detect_doubletap2wake(touch_x, touch_y, true);
+	detect_doubletap2wake(touch_x, touch_y);
 
 	return;
 }

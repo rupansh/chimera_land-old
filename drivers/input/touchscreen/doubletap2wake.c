@@ -219,7 +219,7 @@ static void detect_doubletap2wake(int x, int y)
 		else if (touch_nr == 1) 
 		{
 			//Check for distance and time conditions
-			if ((calc_within_range(x_pre, y_pre,x,y, DT2W_RADIUS) == true) && ((ktime_to_ms(ktime_get())-tap_time_pre) < DT2W_TIME))
+			if ((calc_within_range(x_pre, y_pre,x,y, DT2W_RADIUS) == true) && ((ktime_to_ms(ktime_get_real())-tap_time_pre) < DT2W_TIME))
 			{
 				//touch_nr++;     
 				/*Here we know that the touch number is going to be 2 and 

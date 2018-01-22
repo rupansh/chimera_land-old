@@ -76,7 +76,7 @@ int dt2w_switch = DT2W_DEFAULT;
 bool dt2w_scr_suspended = false;
 bool in_phone_call = false;
 int dt2w_sent_play_pause = 0;
-//int dt2w_feather = 200, dt2w_feather_w = 1;
+int dt2w_feather = 200, dt2w_feather_w = 1;
 #ifdef CONFIG_PSENSOR_ONDEMAND_STATE
 int dtw2_psensor_state = LTR559_ON_DEMAND_RESET;
 #endif

@@ -2834,7 +2834,6 @@ static DEVICE_ATTR_RW(ro);
 static DEVICE_ATTR_RW(nofua);
 static DEVICE_ATTR_RW(file);
 static DEVICE_ATTR(perf, 0644, fsg_show_perf, fsg_store_perf);
-static DEVICE_ATTR(cdrom, 0644, fsg_show_cdrom, fsg_store_cdrom);
 
 static struct device_attribute dev_attr_ro_cdrom = __ATTR_RO(ro);
 static struct device_attribute dev_attr_file_nonremovable = __ATTR_RO(file);
@@ -2982,7 +2981,6 @@ static inline void fsg_common_remove_sysfs(struct fsg_lun *lun)
 	 * so we don't differentiate between removing e.g. dev_attr_ro_cdrom
 	 * and dev_attr_ro
 	 */
-	device_remove_file(&lun->dev, &dev_attr_cdrom);
 	device_remove_file(&lun->dev, &dev_attr_ro);
 	device_remove_file(&lun->dev, &dev_attr_file);
 	device_remove_file(&lun->dev, &dev_attr_perf);
@@ -3114,9 +3112,6 @@ static inline int fsg_common_add_sysfs(struct fsg_common *common,
 			      : &dev_attr_ro);
 	if (rc)
 		goto error;
-        rc = device_create_file(&curlun->dev, &dev_attr_cdrom);
-	if (rc)
-                goto error_luns;
 	rc = device_create_file(&lun->dev,
 				lun->removable
 			      ? &dev_attr_file

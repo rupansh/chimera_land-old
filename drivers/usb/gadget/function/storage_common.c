@@ -333,17 +333,8 @@ ssize_t fsg_show_nofua(struct fsg_lun *curlun, char *buf)
 }
 EXPORT_SYMBOL_GPL(fsg_show_nofua);
 
-static ssize_t fsg_show_cdrom (struct device *dev, struct device_attribute *attr,
-			   char *buf)
-{
-	struct fsg_lun  *curlun = fsg_lun_from_dev(dev);
-
-	return sprintf(buf, "%d\n", curlun->cdrom);
-}
-
-#ifdef CONFIG_USB_MSC_PROFILING
-static ssize_t fsg_show_perf(struct device *dev, struct device_attribute *attr,
-			      char *buf)
+ssize_t fsg_show_perf(struct device *dev, struct device_attribute *attr,
+				char *buf)
 {
 	struct fsg_lun	*curlun = fsg_lun_from_dev(dev);
 	unsigned long rbytes, wbytes;
@@ -502,32 +493,45 @@ ssize_t fsg_store_file(struct fsg_lun *curlun, struct rw_semaphore *filesem,
 	up_write(filesem);
 	return (rc < 0 ? rc : count);
 }
+EXPORT_SYMBOL_GPL(fsg_store_file);
 
-static ssize_t fsg_store_cdrom(struct device *dev, struct device_attribute *attr,
-				  const char *buf, size_t count)
+ssize_t fsg_store_cdrom(struct fsg_lun *curlun, struct rw_semaphore *filesem,
+			const char *buf, size_t count)
 {
-	ssize_t    rc;
-	struct fsg_lun  *curlun = fsg_lun_from_dev(dev);
-	struct rw_semaphore  *filesem = dev_get_drvdata(dev);
-	unsigned  cdrom;
+	bool		cdrom;
+	int		ret;
 
-	rc = kstrtouint(buf, 2, &cdrom);
-	if (rc)
-		return rc;
+	ret = strtobool(buf, &cdrom);
+	if (ret)
+		return ret;
 
-	/*
-	 * Allow the cdrom status to change only while the
-	 * backing file is closed.
-	 */
 	down_read(filesem);
-	if (fsg_lun_is_open(curlun)) {
-		LDBG(curlun, "cdrom status change prevented\n");
-		rc = -EBUSY;
-	} else {
+	ret = cdrom ? _fsg_store_ro(curlun, true) : 0;
+
+	if (!ret) {
 		curlun->cdrom = cdrom;
-		LDBG(curlun, "cdrom status set to %d\n", curlun->cdrom);
-		rc = count;
+		ret = count;
 	}
 	up_read(filesem);
-	return rc;
+
+	return ret;
 }
+EXPORT_SYMBOL_GPL(fsg_store_cdrom);
+
+ssize_t fsg_store_removable(struct fsg_lun *curlun, const char *buf,
+			    size_t count)
+{
+	bool		removable;
+	int		ret;
+
+	ret = strtobool(buf, &removable);
+	if (ret)
+		return ret;
+
+	curlun->removable = removable;
+
+	return count;
+}
+EXPORT_SYMBOL_GPL(fsg_store_removable);
+
+MODULE_LICENSE("GPL");

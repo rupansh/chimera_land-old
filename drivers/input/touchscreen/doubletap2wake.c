@@ -83,7 +83,7 @@ int dtw2_psensor_state = LTR559_ON_DEMAND_RESET;
 static cputime64_t tap_time_pre = 0;
 static int touch_x = 0, touch_y = 0, x_pre = 0, y_pre = 0;
 static bool touch_x_called = false, touch_y_called = false, touch_cnt = false;
-static bool /*exec_count = true,*/ touch_nr = 0;
+static bool  exec_count = true, touch_nr = 0;
 static struct input_dev * doubletap2wake_pwrdev;
 static DEFINE_MUTEX(pwrkeyworklock);
 static struct workqueue_struct *dt2w_input_wq;
